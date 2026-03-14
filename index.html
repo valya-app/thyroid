@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thyroid Tracker</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Thyroid">
+    <meta name="theme-color" content="#f0ebe8">
+    <link id="appIcon" rel="apple-touch-icon">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+        :root {
+            --bg: #f0ebe8;
+            --card: #faf8f6;
+            --text: #2c2825;
+            --text-muted: #9b8f87;
+            --accent: #b07d6b;
+            --accent-light: #d4a898;
+            --done-color: #c4b5b0;
+            --section-border: #ede8e4;
+            --pill-bg: #ede8e4;
+            --progress-bg: #e8ddd9;
+            --progress-fill: linear-gradient(90deg, #c4957f, #b07d6b);
+            --shadow: 0 8px 32px rgba(120,80,60,0.10);
+            --check-bg: #fff7f4;
+            --check-border: #d4b5aa;
+            --check-active: #b07d6b;
+            --green: #7aab7e;
+            --green-light: #eaf4eb;
+            --amber: #d4a44c;
+            --amber-light: #fdf3e0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 32px 16px 48px;
+        }
+
+        .container {
+            background: var(--card);
+            padding: 28px 24px 32px;
+            border-radius: 24px;
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 420px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header-icon {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text);
+            letter-spacing: -0.02em;
+        }
+
+        .date-display {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 400;
+        }
+
+        /* Progress bar */
+        .progress-wrap {
+            margin-bottom: 20px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--progress-bg);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--progress-fill);
+            border-radius: 99px;
+            transition: width 0.4s cubic-bezier(.4,0,.2,1);
+        }
+
+        /* Calendar toggle button */
+        .cal-toggle {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--pill-bg);
+            border: 1.5px solid var(--section-border);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 500;
+            font-family: inherit;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            transition: all 0.18s;
+        }
+
+        .cal-toggle:hover {
+            border-color: var(--accent-light);
+            color: var(--accent);
+        }
+
+        .cal-toggle .arrow {
+            transition: transform 0.25s;
+            font-style: normal;
+        }
+
+        .cal-toggle.open .arrow {
+            transform: rotate(180deg);
+        }
+
+        /* Calendar panel */
+        .cal-panel {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.35s cubic-bezier(.4,0,.2,1), opacity 0.3s;
+            opacity: 0;
+            margin-bottom: 0;
+        }
+
+        .cal-panel.open {
+            max-height: 700px;
+            opacity: 1;
+            margin-bottom: 20px;
+        }
+
+        .cal-months {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .cal-month {
+            background: #fff;
+            border: 1px solid var(--section-border);
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .cal-month-title {
+            text-align: center;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: capitalize;
+            margin-bottom: 10px;
+            letter-spacing: 0.02em;
+        }
+
+        .cal-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            margin-bottom: 4px;
+        }
+
+        .cal-wd {
+            text-align: center;
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 2px 0 4px;
+            text-transform: uppercase;
+        }
+
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px;
+        }
+
+        .cal-day {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 500;
+            position: relative;
+            transition: transform 0.12s;
+        }
+
+        .cal-day.empty { background: transparent; }
+
+        .cal-day.future {
+            color: #d0c8c4;
+            background: transparent;
+        }
+
+        .cal-day.no-data {
+            color: var(--text-muted);
+            background: var(--pill-bg);
+        }
+
+        .cal-day.partial {
+            background: var(--amber-light);
+            color: var(--amber);
+        }
+
+        .cal-day.full {
+            background: var(--green-light);
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        .cal-day.today {
+            outline: 2px solid var(--accent);
+            outline-offset: -2px;
+            font-weight: 700;
+        }
+
+        .cal-day:not(.empty):not(.future):hover {
+            transform: scale(1.12);
+            z-index: 1;
+        }
+
+        /* Legend */
+        .cal-legend {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+        .legend-dot.full { background: var(--green-light); border: 1.5px solid var(--green); }
+        .legend-dot.partial { background: var(--amber-light); border: 1.5px solid var(--amber); }
+        .legend-dot.no-data { background: var(--pill-bg); border: 1.5px solid var(--section-border); }
+
+        /* Sections */
+        .section {
+            margin-bottom: 8px;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #fff;
+            border: 1px solid var(--section-border);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px 8px;
+            background: var(--pill-bg);
+        }
+
+        .section-icon { font-size: 0.95rem; }
+
+        .section-title {
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .section-body { padding: 6px 8px 8px; }
+
+        /* Items */
+        .item {
+            display: flex;
+            align-items: center;
+            padding: 7px 6px;
+            border-radius: 9px;
+            cursor: pointer;
+            transition: background 0.15s;
+            user-select: none;
+        }
+
+        .item:hover { background: #faf5f3; }
+        .item:active { background: #f5eeeb; }
+
+        .item input[type="checkbox"] { display: none; }
+
+        .checkmark {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+            border-radius: 6px;
+            border: 1.5px solid var(--check-border);
+            background: var(--check-bg);
+            margin-right: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.18s cubic-bezier(.4,0,.2,1);
+            font-size: 0.7rem;
+            color: transparent;
+        }
+
+        .item input:checked ~ .checkmark {
+            background: var(--check-active);
+            border-color: var(--check-active);
+            color: white;
+        }
+
+        .item-text {
+            font-size: 0.88rem;
+            font-weight: 400;
+            color: var(--text);
+            transition: color 0.18s, opacity 0.18s;
+        }
+
+        .item input:checked ~ .checkmark ~ .item-text,
+        .item-text.done {
+            color: var(--done-color);
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        /* Reset button */
+        .reset-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            border: 1.5px solid var(--section-border);
+            color: var(--text-muted);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 500;
+            margin-top: 18px;
+            transition: all 0.18s;
+            font-family: inherit;
+        }
+
+        .reset-btn:hover {
+            border-color: var(--accent-light);
+            color: var(--accent);
+            background: #fff7f4;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <span class="header-icon">🌿</span>
+        <h2>Thyroid Support</h2>
+        <div id="date" class="date-display"></div>
+    </div>
+
+    <div class="progress-wrap">
+        <div class="progress-label">
+            <span>Прогресс дня</span>
+            <span id="progress-text">0 / 0</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+    </div>
+
+    <button class="cal-toggle" id="calToggle" onclick="toggleCalendar()">
+        <span>📅 Календарь курса</span>
+        <i class="arrow">▾</i>
+    </button>
+
+    <div class="cal-panel" id="calPanel">
+        <div class="cal-months" id="calMonths"></div>
+        <div class="cal-legend">
+            <div class="legend-item"><div class="legend-dot full"></div> Всё принято</div>
+            <div class="legend-item"><div class="legend-dot partial"></div> Частично</div>
+            <div class="legend-item"><div class="legend-dot no-data"></div> Нет данных</div>
+        </div>
+    </div>
+
+    <div id="tracker-content"></div>
+
+    <button class="reset-btn" onclick="resetDay()">Сбросить день</button>
+</div>
+
+<script>
+    const schedule = [
+        { time: "Утро (Натощак)", icon: "🌅", items: ["Тирозин"] },
+        { time: "Завтрак", icon: "☀️", items: ["Йод (Kelp)", "Селен", "Вит. D3 + А", "Омега-3", "B-комплекс", "Куркумин 1"] },
+        { time: "Через 2ч после завтрака", icon: "⏳", items: ["Магний 1"] },
+        { time: "Обед", icon: "🌿", items: ["Цинк", "Куркумин 2"] },
+        { time: "Через 2ч после обеда", icon: "⏳", items: ["Магний 2"] },
+        { time: "Ужин / Сон", icon: "🌙", items: ["Инозитол", "Магний 3"] }
+    ];
+
+    const TOTAL = schedule.reduce((sum, s) => sum + s.items.length, 0);
+
+    function todayKey() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function getHistory() {
+        return JSON.parse(localStorage.getItem('thyroid_history') || '{}');
+    }
+
+    function saveToHistory(done) {
+        const history = getHistory();
+        history[todayKey()] = { done, total: TOTAL };
+        localStorage.setItem('thyroid_history', JSON.stringify(history));
+    }
+
+    function render() {
+        const container = document.getElementById('tracker-content');
+        const savedData = JSON.parse(localStorage.getItem('thyroid_tracker') || '{}');
+        const today = new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+        document.getElementById('date').innerText = today.charAt(0).toUpperCase() + today.slice(1);
+
+        const done = Object.values(savedData).filter(Boolean).length;
+        const pct = TOTAL ? Math.round(done / TOTAL * 100) : 0;
+        document.getElementById('progress-text').innerText = `${done} / ${TOTAL}`;
+        document.getElementById('progress-fill').style.width = pct + '%';
+
+        saveToHistory(done);
+
+        let html = '';
+        schedule.forEach((section, sIdx) => {
+            html += `<div class="section">
+                <div class="section-header">
+                    <span class="section-icon">${section.icon}</span>
+                    <span class="section-title">${section.time}</span>
+                </div>
+                <div class="section-body">`;
+            section.items.forEach((item, iIdx) => {
+                const id = `item-${sIdx}-${iIdx}`;
+                const checked = savedData[id] ? 'checked' : '';
+                const textClass = savedData[id] ? 'done' : '';
+                html += `
+                    <label class="item">
+                        <input type="checkbox" id="${id}" ${checked} onclick="toggle('${id}')">
+                        <span class="checkmark">${savedData[id] ? '✓' : ''}</span>
+                        <span class="item-text ${textClass}">${item}</span>
+                    </label>`;
+            });
+            html += `</div></div>`;
+        });
+        container.innerHTML = html;
+
+        renderCalendar();
+    }
+
+    function toggle(id) {
+        const savedData = JSON.parse(localStorage.getItem('thyroid_tracker') || '{}');
+        savedData[id] = !savedData[id];
+        localStorage.setItem('thyroid_tracker', JSON.stringify(savedData));
+        render();
+    }
+
+    function resetDay() {
+        if (confirm("Очистить все отметки за сегодня?")) {
+            localStorage.removeItem('thyroid_tracker');
+            render();
+        }
+    }
+
+    /* ── Calendar ── */
+
+    function toggleCalendar() {
+        const panel = document.getElementById('calPanel');
+        const btn = document.getElementById('calToggle');
+        const isOpen = panel.classList.toggle('open');
+        btn.classList.toggle('open', isOpen);
+    }
+
+    function renderCalendar() {
+        const history = getHistory();
+        const now = new Date();
+        const todayStr = todayKey();
+
+        // Show current month; show previous month only if it has any data
+        const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const prevYear = prevMonth.getFullYear();
+        const prevM = prevMonth.getMonth();
+        const prevPrefix = `${prevYear}-${String(prevM+1).padStart(2,'0')}-`;
+        const prevHasData = Object.keys(history).some(k => k.startsWith(prevPrefix) && history[k].done > 0);
+
+        const months = [];
+        if (prevHasData) months.push(prevMonth);
+        months.push(new Date(now.getFullYear(), now.getMonth(), 1));
+
+        const weekdays = ['пн','вт','ср','чт','пт','сб','вс'];
+
+        let html = '';
+        months.forEach(monthDate => {
+            const year = monthDate.getFullYear();
+            const month = monthDate.getMonth();
+            const monthName = monthDate.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            // Monday-based: getDay() returns 0=Sun,1=Mon...
+            let startDay = new Date(year, month, 1).getDay();
+            startDay = startDay === 0 ? 6 : startDay - 1; // convert to Mon=0
+
+            html += `<div class="cal-month">
+                <div class="cal-month-title">${monthName}</div>
+                <div class="cal-weekdays">`;
+            weekdays.forEach(wd => {
+                html += `<div class="cal-wd">${wd}</div>`;
+            });
+            html += `</div><div class="cal-grid">`;
+
+            // Empty cells before first day
+            for (let i = 0; i < startDay; i++) {
+                html += `<div class="cal-day empty"></div>`;
+            }
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const isToday = key === todayStr;
+                const isFuture = key > todayStr;
+                const rec = history[key];
+
+                let cls = 'cal-day';
+                if (isFuture) {
+                    cls += ' future';
+                } else if (!rec || rec.done === 0) {
+                    cls += ' no-data';
+                } else if (rec.done >= rec.total) {
+                    cls += ' full';
+                } else {
+                    cls += ' partial';
+                }
+                if (isToday) cls += ' today';
+
+                html += `<div class="${cls}">${d}</div>`;
+            }
+
+            html += `</div></div>`;
+        });
+
+        document.getElementById('calMonths').innerHTML = html;
+    }
+
+    render();
+    generateIcon();
+
+    function generateIcon() {
+        const size = 512;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+
+        // Rounded background
+        const r = 112;
+        ctx.beginPath();
+        ctx.moveTo(r, 0);
+        ctx.lineTo(size - r, 0);
+        ctx.quadraticCurveTo(size, 0, size, r);
+        ctx.lineTo(size, size - r);
+        ctx.quadraticCurveTo(size, size, size - r, size);
+        ctx.lineTo(r, size);
+        ctx.quadraticCurveTo(0, size, 0, size - r);
+        ctx.lineTo(0, r);
+        ctx.quadraticCurveTo(0, 0, r, 0);
+        ctx.closePath();
+        ctx.fillStyle = '#b07d6b';
+        ctx.fill();
+
+        // Leaf shape
+        ctx.save();
+        ctx.translate(size / 2, size / 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.95)';
+        ctx.beginPath();
+        ctx.moveTo(0, -165);
+        ctx.bezierCurveTo(110, -165, 155, -40, 140, 70);
+        ctx.bezierCurveTo(125, 175, 0, 185, 0, 185);
+        ctx.bezierCurveTo(0, 185, -125, 175, -140, 70);
+        ctx.bezierCurveTo(-155, -40, -110, -165, 0, -165);
+        ctx.closePath();
+        ctx.fill();
+
+        // Center vein
+        ctx.strokeStyle = '#b07d6b';
+        ctx.lineWidth = 14;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(0, -140);
+        ctx.lineTo(0, 170);
+        ctx.stroke();
+
+        // Side veins
+        ctx.lineWidth = 9;
+        ctx.globalAlpha = 0.7;
+        [[-55, -60, -115, 0], [55, -60, 115, 0],
+         [-50, 20, -110, 80], [50, 20, 110, 80],
+         [-40, 90, -95, 148], [40, 90, 95, 148]].forEach(([x1,y1,x2,y2]) => {
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+        });
+
+        ctx.restore();
+
+        // Set as apple-touch-icon
+        document.getElementById('appIcon').href = canvas.toDataURL('image/png');
+
+        // Manifest for Android
+        const manifest = {
+            name: 'Thyroid Tracker',
+            short_name: 'Thyroid',
+            start_url: '.',
+            display: 'standalone',
+            background_color: '#f0ebe8',
+            theme_color: '#b07d6b',
+            icons: [{ src: canvas.toDataURL('image/png'), sizes: '512x512', type: 'image/png' }]
+        };
+        const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = URL.createObjectURL(blob);
+        document.head.appendChild(manifestLink);
+    }
+</script>
+
+</body>
+</html>
