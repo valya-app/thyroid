@@ -443,9 +443,23 @@
         localStorage.setItem('thyroid_history', JSON.stringify(history));
     }
 
+    function loadChecks() {
+        const raw = JSON.parse(localStorage.getItem('thyroid_tracker') || '{}');
+        // Авто-сброс если день изменился
+        if (raw._date && raw._date !== todayKey()) {
+            return {};
+        }
+        const { _date, ...checks } = raw;
+        return checks;
+    }
+
+    function saveChecks(checks) {
+        localStorage.setItem('thyroid_tracker', JSON.stringify({ _date: todayKey(), ...checks }));
+    }
+
     function render() {
         const container = document.getElementById('tracker-content');
-        const savedData = JSON.parse(localStorage.getItem('thyroid_tracker') || '{}');
+        const savedData = loadChecks();
         const today = new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
         document.getElementById('date').innerText = today.charAt(0).toUpperCase() + today.slice(1);
 
@@ -483,9 +497,9 @@
     }
 
     function toggle(id) {
-        const savedData = JSON.parse(localStorage.getItem('thyroid_tracker') || '{}');
+        const savedData = loadChecks();
         savedData[id] = !savedData[id];
-        localStorage.setItem('thyroid_tracker', JSON.stringify(savedData));
+        saveChecks(savedData);
         render();
     }
 
